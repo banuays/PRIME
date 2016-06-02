@@ -1,0 +1,131 @@
+body{
+	padding : 0px;
+	margin: 0px;
+	background-color:#EFEFEF;
+}
+.form-group {
+    margin-bottom: 15px;
+    max-width: 250px;
+    background-color: #eeeeee;
+	margin-top: 8px;
+	height: 40px;
+}
+.input-group-addon{
+	
+	height: 40px;
+}
+.navbar-nav{
+	
+	background-color: #000000;
+	
+}
+.navbar-brand{
+	padding:0px;
+	padding-left:10px;
+}
+.navbar{
+	padding: 0px;
+	background-color: #000000;
+}
+li .btn
+{
+	margin-top:8px;
+	margin-right:3px;
+}
+.tutbtn
+{
+	margin-left: 25px;
+    margin-top:8px;
+	margin-right:3px;
+}
+
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+#spanButton {
+	margin-left: 20px;
+	margin-right: 20px;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+.range {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+.rangerDiv{
+    width: 150px;
+}
+
+.speedControl {display:block; overflow:hidden; background:#BDBDBD; color:#2E2E2E; margin:8px 10px 0; border-radius:3px; -weblit-border-radius:3px; -moz-border-radius:3px}
+	.speedControl span.speedInfo {float:left; display:block; width:50px; height:34px; padding:0 10px; line-height:34px}
+	.speedControl input.speedInput {float:left; display:block; margin-top:7px; border-color: darkslategray; width:100px !important}
+
+.navbarText{
+    padding-top: 8px;
+    padding-left: 20px;
+}
+.topText{
+    margin: auto;
+    width: 60%;
+    padding: 10px;
+}
+.rightImg {
+    margin-left: 15px;
+    margin-right: 50px;
+    float: right;
+    top: 5px;
+}
+
+select {
+   -webkit-appearance: none;
+   -moz-appearance: none;
+   appearance: none;
+}
+
+li a, .dropbtn {
+    display: inline-block;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+}
+
+li.dropdown {
+    display: inline-block;
+}
+
+.dropdown-content {
+    padding: 3px;
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index:1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content button { 
+    width:100%;
+    margin-top: 3px !important;
+}
