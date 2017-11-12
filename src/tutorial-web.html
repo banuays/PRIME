@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<script>
+var partId;
+function processId(){
+    /*var parameters = location.search.substring(1).split("&");
+    var temp = parameters[0].split("=");
+    partId = unescape(temp[1]);
+    //console.log('user id: '+partId);
+    logExp("startTut", partId);
+    //get run type
+    var runType = partId.slice(-1);
+    //p gets name. we can continue to get surname and email
+    //temp = parameters[1].split("=");
+    //p = unescape(temp[1]);*/
+    var timeStamp = Math.floor(Date.now() / 1000);
+    var randomLetter = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 1);
+    partId = timeStamp+randomLetter;
+    return partId;
+    return partId;
+}
+function logButtonClicked(clicked_id){
+    logExp(partId+clicked_id+" ", "WebLogger");
+}    
+</script>
+<script>
+/* When the user clicks on the button, 
+toggle between hiding and showing the dropdown content */
+function getDropdown() {
+    document.getElementById("myDropdown").classList.toggle("show");
+}
+// Close the dropdown if the user clicks outside of it
+window.onclick = function(e) {
+  if (!e.target.matches('.dropbtn')) {
+
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    for (var d = 0; d < dropdowns.length; d++) {
+      var openDropdown = dropdowns[d];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+</script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.8.21/themes/base/jquery-ui.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+<link href="css/main.css" rel="stylesheet">
+
+  <style type="text/css">
+    html, body, #canvas {
+      height: 90%;
+      padding: 0;
+    }
+    .diagram-note {
+      background-color: rgba(66, 180, 21, 0.7);
+      color: White;
+      border-radius: 5px;
+      font-family: Arial;
+      font-size: 12px;
+      padding: 5px;
+      min-height: 16px;
+      width: 50px;
+      text-align: center;
+    }
+    .needs-discussion:not(.djs-connection) .djs-visual > :nth-child(1) {
+      stroke: rgba(66, 180, 21, 0.7) !important; /* color elements as red */
+    }
+            /* defining the animation */
+      @keyframes fadeInAnimation {
+          /* starting state */
+          from {
+              opacity: 0;
+          }
+          /* ending state */
+          to {
+              opacity: 1;
+          }
+      }
+      
+    .highlight:not(.djs-connection) .djs-visual > :nth-child(1) {
+        fill: green !important; /* color elements as green */
+        animation: fadeInAnimation 5s;
+    }
+    .highlight-light:not(.djs-connection) .djs-visual > :nth-child(1) {
+        fill: gray;  /* color elements as green */
+        border: gray;
+        outline-color: gray;
+        animation: fadeInAnimation 5s;
+    }
+    .highlight-toselect:not(.djs-connection) .djs-visual > :nth-child(1) {
+      fill: magenta;  /* color elements as green */
+      border: magenta;
+      outline-color: magenta;
+        animation: fadeInAnimation 5s;
+    }
+    .highlight2:(.djs-connection) .djs-visual > :nth-child(1) {
+      fill: green !important; /* color elements as green */
+        border: green !important;
+        color: green;
+        background: green;
+        background-color: green;
+        outline-color: gold;
+    }
+    .highlight-overlay {
+      background-color: green; /* color elements as green */
+      opacity: 0.4;
+      pointer-events: none; /* no pointer events, allows clicking through onto the element */
+    }
+    /**
+ * shape / connection basic styles
+ */
+    .djs-connection .djs-visual {
+      stroke-width: 10px;
+      fill: green !important; /* color elements as green */
+        color: green;
+        outline-color: aqua;
+        
+    }
+    table.fixed { table-layout:fixed; }
+    table.fixed td { overflow: hidden; }
+  </style>
+    <link rel="stylesheet" href="../../bower_components/bpmn-js/dist/assets/diagram-js.css">
+	<link href="css/introjs.css" rel="stylesheet">
+  <title>PRIME Process Model Animation</title>
+</head>
+<body onload="processId()">
+    <div class="container-fluid">
+	  <a class="navbar-brand" href="#">
+        <img alt="PRIME Process Model Animation" src="images/logotext.png" height="60px" data-step="1" data-intro="Welcome to PRIME." data-position='right'>
+      </a>
+        <a class="rightImg" href="#">
+        <img alt="VU Business Informatics Group" src="images/LogoVUA.png" height="60px" data-step="1" data-intro="Welcome to VU BusI." data-position='right'>
+      </a>
+      <h2 class="topText">PRIME Process Model Animation Tutorial</h2>
+    </div>
+    <div class="container-fluid">
+        <p></p>
+        <p>Welcome to PRIME process model animation page. Try the animation with our example models or load your own process model here.</p>
+    </div>
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+	  <!--a class="navbar-brand" href="#">
+        <!--img alt="PRIME Animation Prototype" src="logotext.png" height="48px" data-step="1" data-intro="Welcome to PRIME." data-position='right'-->
+        <!--img alt="PRIME Animation Prototype" src="logotext.png" height="48px" id="step1">
+      </a-->
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+     <ul class="nav navbar-nav">
+        <li><span loadFile-button-click class="btn btn-info btn-file" id="loadBPMNFile"><span class="glyphicon glyphicon-upload"></span> Load Your BPMN<input type="file" data-open-file value="open" /></span></li>
+        
+        <!--li><button openExistFile-button-click class="btn btn-success" id="openExistFile"><span class="glyphicon glyphicon-upload"></span> Try Sample Models</button>         </li-->
+        
+        <li class="dropdown">
+            <button dropdown-button-click class="btn btn-info dropbtn" onclick="getDropdown()"><span class="glyphicon glyphicon-upload"></span> Try Sample Models</button>
+            <div class="dropdown-content" id="myDropdown">
+              <button openMT5File-button-click class="btn btn-default btn-sm">Building Application</button>
+              <button simpleScan-button-click class="btn btn-default btn-sm">Simple QR Scan</button>
+              <button defBlockStr-button-click class="btn btn-default btn-sm">Default XOR Block Structure</button>
+              <button defAndStr-button-click class="btn btn-default btn-sm">Default AND Block Structure</button>
+            </div>
+        </li>
+        
+        <li><button animSel-button-click class="btn btn-success" id="strtAnimXORSel" onClick="logButtonClicked(this.id)"><span class="glyphicon glyphicon-play"></span> Start Continuous Animation</button></li>
+        <li><button animStep-button-click class="btn btn-success" id="strtAnimStep"><span class="glyphicon glyphicon-step-forward"></span>Start Stepwise Animation</button></li>
+        </ul>
+        
+      <ul class="nav navbar-nav navbar-right">
+        <li><button reset-button-click class="btn btn-danger" id="resetPage" onClick="logButtonClicked(this.id)"><span class="glyphicon glyphicon-refresh"></span> Restart</button></li>
+        <li>
+            <div class="speedControl" id="speedControl">    
+                <span class="speedInfo">Slow</span>
+                <input pace-click id="paceclick" class="speedInput" type="range" name="pace" class="btn" min="-3000" max="-100" value="-800" step="-100">
+                <span class="speedInfo">Fast</span>
+            </div>
+        </li>
+        <li><button animFinish-button-click class="btn btn-warning" id="finishAnim"><span class="glyphicon glyphicon-ok"></span> Finish the Tutorial</button></li>
+        <!--li><button class="btn btn-default btn-file" id="countdown">05:00</button></li-->
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+    
+
+  <!-- element to draw bpmn diagram in -->
+  <div id="canvas"></div>
+    <div>
+        <button intro-tut-click class="tutbtn btn btn-danger" id="plainTut" href="javascript:void(0);" >Start Model Viewer Tutorial</button>
+        <button anim-tut-click class="tutbtn btn btn-danger" id="animTut"  href="javascript:void(0);" onclick="startIntroAnim(this.id);">Start Animation Tutorial</button>
+    </div>
+  <!--div id="diagram"></div-->
+  <!--div class="canvas" id="canvas">
+    <h3>diagram</h3>
+    <div id="js-canvas"></div>
+  </div-->
+    
+    <!--div modelListDiv id="modellist">
+    <!--Serverdaki modelleri acmak icin listeledigimiz div'i simdilik kaldiriyorum. 
+        <h3>Model List</h3>
+        <input type="button" model-list-div id="modelList" value="Banu"/>
+    </div-->
+  <!--div class="console">
+    <h3>console</h3>
+    <textarea id="js-console" rows="0" cols="200"></textarea>
+  </div-->
+	<div id="step2" style="position: absolute; left: 7%; top: 38%;"></div>
+	<div id="step3" style="position: absolute; left: 28%; top: 37%;"></div>
+    <div id="step4" style="position: absolute; left: 35%; top: 58%;"></div>
+    <div id="step5" style="position: absolute; left: 70%; top: 30%;"></div>
+    <div id="step6" style="position: absolute; left: 75%; top: 28%;"></div>
+    <div id="step7" style="position: absolute; left: 97%; top: 31%;"></div>
+    <div id="step8" style="position: absolute; left: 10%; top: 40%;"></div>
+  <!-- scripts -->
+
+  <!-- seed dependencies (required for demo only) -->
+  <script src="../../bower_components/jquery/dist/jquery.js"></script>
+
+  <!-- bpmn-js viewer -->
+  <script src="../../bower_components/bpmn-js/dist/bpmn-viewer.js"></script>
+
+  <!-- application -->
+  <script src="js/tutorial-web_bundle.js"></script>
+  <script src="logs/logExp.js"></script>
+  <script type="text/javascript" src="js/intro.min.js"></script>
+  <script>
+      function startIntroViewer(){
+        //logExp("clickTutButton plainTut", partId);
+        var intro = introJs();
+        intro.setOptions({
+            steps: [
+            {
+                intro: "On the background is the model viewer. \nPlease try to ZOOM in/out with mouse scroll and MOVE the model by holding and dragging it with the mouse."
+            },
+            {
+                element: '#step2',
+                intro: "<img src='images/StartEvent.jpg'></img><br> Here are the start events. As there are more than one start event, the process can start when one of the events take place.",
+                position: 'bottom'
+            },
+            {
+                element: '#step3',
+                intro: "<img src='images/XORDiv.jpg'></img><br> XOR gateways show alternative flows. Here, a 'rework loop' occurs when the result of 'Check application' activity is incomplete. Then, 'Return application for completion' is performed and 'Check Application' is performed once again.",
+                position: 'right'
+            },
+            {
+                element: '#step4',
+                intro: "<img src='images/XORBlock.jpg'></img><br> In this XOR block, if an external expert is not required, the upper path is taken and no activity is performed. Otherwise, 'Request external recommendation' activity takes place.",
+                position: 'left'
+            },
+            {
+                element: '#step5',
+                intro: "<img src='images/IntEvent.jpg'></img><br> This is an event that needs to happen during the process flow so that the process can continue.",
+                position: 'left'
+            },
+            {
+                element: '#step6',
+                intro: "<img src='images/ANDDiv.jpg'></img><br> AND gateways show parallel activities. Here, 'Archive Application' in the lower path is performed in parallel with one of the activities in the upper path depending on the condition.",
+                position: 'left'
+            },
+            {
+                element: '#step7',
+                intro: "<img src='images/EndEvent.jpg'></img><br> An end event marks the end of the process. There may be more than one possible end events.",
+                position: 'left'
+            },
+            {
+                element: '#finishAnim',
+                intro: "Now, play with the model by zooming in/out with the mouse scroll and holding and dragging the model. Check the animation tutorial as well. When you are finished, click here to go back.",
+                position: 'left'
+            }
+          ],
+            //exitOnOverlayClick: false, 
+            showStepNumbers: false
+          }
+                        );
+          intro.start();
+      }
+      function startIntroAnim(){
+        //logExp("clickTutButton animTut", partId); 
+        var intro = introJs();
+        intro.setOptions({
+            steps: [
+            {
+                element: '#strtAnimXORSel',
+                intro: "You can start the continuous animation by clicking here. The animation will continue automatically until it reaches a point where you need to make a selection. ",
+                position: 'bottom'
+            },
+            {
+                element: '#strtAnimStep',
+                intro: "You can start the stepwise animation by clicking here. You need to click on the gray elements in every step for the animation to proceed. ",
+                position: 'bottom'
+            },
+            {
+                element: '#resetPage',
+                intro: "You can reset the animation and restart from the beginning at any time by clicking here.",
+                position: 'bottom'
+            },
+            {
+                element: '#speedControl',
+                intro: "You can change the speed of the animation here. Beware that new settings will be effective after the animation comes to a pause.",
+                position: 'bottom'
+            },
+            {
+                element: '#step2',
+                intro: "<img src='images/Anim-StartEvent.png'></img><br> The animation will start by marking the start events. When there are more than one start event, they will be marked in pink. You need to click on one of them to continue.",
+                position: 'bottom'
+            },
+            {
+                element: '#step8',
+                intro: "<img src='images/Anim-RegularFlow.jpg'></img><br> The animation will show the flow of the process by marking the model elements in green in conformance with the flow.",
+                position: 'bottom'
+            },
+            {
+                element: '#step4',
+                intro: "<img src='images/Anim-XORSplit.jpg'></img><br> The animation will pause when there are alternative paths. These paths will be colored in pink. Click on the arrow or its label to select the flow you want to go with. The unselected path will turn gray.",
+                position: 'left'
+            },
+            {
+                element: '#step6',
+                intro: "<img src='images/Anim-ParallelFlow.jpg'></img><br> The animation will automatically go through multiple paths of a parallel split. All paths must be finished for the animation to automatically continue through the parallel join.",
+                position: 'left'
+            },
+            {
+                element: '#step7',
+                intro: "<img src='images/Anim-End.jpg'></img><br> The animation will end when it reaches an end event. Please run the animation again; this time discovering other alternative paths. ",
+                position: 'left'
+            },
+            {
+                element: '#finishAnim',
+                intro: "Now try the animation yourself. When you are finished, click here to go back. ",
+                position: 'left'
+            }
+          ],
+            //exitOnOverlayClick: false, 
+            showStepNumbers: false
+          }
+                        );
+          intro.start();
+      }
+      //javascript:introJs().start();
+      
+      javascript:startIntroAnim(); //open this to start tutorial on page load
+  </script>
+</body>
+</html>
