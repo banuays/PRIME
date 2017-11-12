@@ -30,17 +30,10 @@ var createFrgTree = require('./FragmentTree').createFrgTree;
 //Global variables
 var eventBus, event;
 var loopCount=0;
-var timerCoef=800;             //adjust the pace
+var timerCoef=0;             //adjust the pace
 var isStepAnimSelected=false;//if stepwise or cont animation selected
-var isSelAnimSelected=false;
 var isJustFollowNext=false;  //if only the following node needs to be clicked in stepwise anim
 var nodetobeClicked=[]; //list of nodes that need to be clicked
-
-//filters
-var isRoleBasedAnimSelected=false;
-var roleIdtobeAnimated;
-var isCurObjInSelectedLane=false;
-var isRandomFlowSelected=false;
 
 var isPathSelected=false;
 var isMultipleStartEvents=false;  //if there are multiple start events, user needs to select one
@@ -62,15 +55,9 @@ var gatewayCombination = [
 var allObjects = [
     /*id,
     isPassed */
-];
-
-var lanes = [                       //list of lanes 
-    /*laneId: element.id,
-    laneSize:element.width,
-    laneName: name*/
-];
+]
 var startEvents=[/*element*/];
-var numOfRepeats = 0;//kac kere end'e ulastigi. 
+var numOfRepeats = 0;
 var timeoutsArray=[];
 var particId;
 //Add console -------------------
@@ -88,13 +75,11 @@ function log() {
 function openDiagram(diagram) {
     viewer.importXML(diagram, function(err) {
       if (!err) {
-        resetAll();
         //log('File loaded!');
         viewer.get('canvas').zoom('fit-viewport');
         //Get lanes so that we put lane names through the diagram
         elementRegistry = viewer.get('elementRegistry');
-        //var lanes = [];
-        lanes.length=0;
+        var lanes = [];
         var elements = elementRegistry.filter(function(element) {
             if(is(element, 'bpmn:Lane')){
                 var objToParse = element.businessObject;//Base
@@ -110,7 +95,7 @@ function openDiagram(diagram) {
         var overlays = viewer.get('overlays');
         for(var k=0; k<lanes.length;k++){
           var overlayPosition=400;
-            var name = lanes[k].laneName;//.replace(/\s+/g, '');
+            var name = lanes[k].laneName.replace(/\s+/g, '');
             var numOfRepeatsinLane=0;
             while(overlayPosition < lanes[k].laneSize){
                 var minZoomV=0;
@@ -128,14 +113,12 @@ function openDiagram(diagram) {
                     minZoom: minZoomV,
                     maxZoom: 5.0
                   },
-                  html: '<div style="color:gray; font-style:italic; font-size:12px; white-space: nowrap">' + name + '</div>'
+                  html: '<div style="color:gray; font-style:italic; font-size:12px">' + name + '</div>'
                 });
                 overlayPosition = overlayPosition + 400;
                 numOfRepeatsinLane++;
             }
         }
-        //Populate role list combobox
-        populateRoleDropdown();
         } else {
         //log('something went wrong:', err);
       }
@@ -145,7 +128,8 @@ function openDiagram(diagram) {
         function myFunction() {
             console.log("mouse cevirdik jsde");
             console.log(viewer.get('canvas').zoom(false));
-            //logExp("zoomPrc1Anim "+ viewer.get('canvas').zoom(false), particId);
+            //logExp("zoomPrcTut "+ viewer.get('canvas').zoom(false), particId);
+            //logExp(particId+" zoomPrcTut "+viewer.get('canvas').zoom(false), "WebLogger");
         }
         eventBus = viewer.get('eventBus');
         // you may hook into any of the following events
@@ -164,7 +148,8 @@ function openDiagram(diagram) {
             //seq flow okunun kendisi yaninda ona bagli olan labela da tiklayabiliriz. O yuzden label click olursa da bakiyoruz.
             if(e.element.type.indexOf('StartEvent') != -1 && isMultipleStartEvents == true){
                 //secilen start eventi bulup oradan animationi normal sekilde baslat
-                logExp(particId+" clickPrc1AnimStartEvent "+e.element.id, "WebLogger");
+                //logExp("clickTutStartEvent "+e.element.id, particId);
+                logExp(particId+" clickTutStartEvent "+e.element.id, "WebLogger");
                 markObjectAndSeqFlow(e.element.id, 'highlight', 'lime');
                 //Secileni yesil yaptiktan sonra diger startlari da gray yapicaz. 
                 for(var m = 0; m <startEvents.length; m++){
@@ -190,7 +175,6 @@ function openDiagram(diagram) {
                 }
             }//start event degil herhangi bir seye tikladiysa alternatiflerden secim ya da stepwiseda ilerleme var mi diye bakiyoruz
             else{ //if(e.element.type.indexOf('SequenceFlow') != -1 || e.element.type.indexOf('label') != -1){//sectigimiz akis ise
-                console.log("triggera geliyor bizim yaptigimiz");
                 isPathSelected = true;
                 selectedElementId = e.element.id.replace('_label','');
                 
@@ -209,30 +193,23 @@ function openDiagram(diagram) {
                             markObjectAndSeqFlow(nodetoParse.id, 'highlight', 'lime');
                             //devam etmeden bu listeden kliklenen objeyi cikarmamiz lazim
                             for(var n=0; n<nodetobeClicked.length;n++){
-                                if(nodetobeClicked[n].indexOf(selectedElementId) != -1){//bu secilen aslinda seq degil node 
+                                if(nodetobeClicked[n] == selectedElementId){//bu secilen aslinda seq degil node 
                                     nodetobeClicked.splice(n, 1);
                                 }
                             }
                             findNextObject(nodetoParse.get('outgoing')[0]);
-                            //if we found the node to be clicked in step anim, we won't go further to search for seq flow check
-                            return;
                         }
                     }
                 }
                 var clickedGatewayPath;
                 for(i=0; i<seqFlowstobeClicked.length;i++){
                     if(seqFlowstobeClicked[i].seqFlowId == selectedElementId){
-                    //logExp("clickPrc1AnimAltPath "+selectedElementId, particId);
-                    logExp(particId+" clickPrc1AnimAltPath "+selectedElementId, "WebLogger");
+                        //logExp("clickTutAltPath "+selectedElementId, particId);
+                        logExp(particId+" clickTutAltPath "+selectedElementId, "WebLogger");
                         var currShape = elementRegistry.get(selectedElementId);
                         var seqFlowToParse = currShape.businessObject;//Base 
                         //artik bu XORa ait kollari tiklanacaklar listesinden cikarabiliriz
                         clickedGatewayPath = seqFlowstobeClicked[i].relatedXOR;
-                        if(isRandomFlowSelected == false){
-                            loopCount = 0;
-                        }if(isRoleBasedAnimSelected == true && isCurObjInSelectedLane == true){
-                            loopCount = 0;
-                        }
                         for(var k = seqFlowstobeClicked.length - 1; k >= 0; k--){
                             if(seqFlowstobeClicked[k].relatedXOR === clickedGatewayPath) {
                                if(seqFlowstobeClicked[k].seqFlowId != selectedElementId){
@@ -245,47 +222,32 @@ function openDiagram(diagram) {
                                 seqFlowstobeClicked.splice(k, 1);
                             }
                         }
+                        loopCount = 0;
                         markSeqFlowwithGivenId(selectedElementId, 'lime');
                         findNextObject(seqFlowToParse);
                     }
                 }
             }//end of main if. What is the selected object type (seq flow, start event etc)
-            if(isCurObjInSelectedLane == true){
-                isCurObjInSelectedLane = false;
-            }
           });
         });
     });
 
 }
 var fs = require('fs');
-var xmlDiagram = fs.readFileSync(__dirname + '/../resources/IssueManagement.bpmn', 'utf-8');
+var xmlDiagram = fs.readFileSync(__dirname + '/../resources/MT5-Simple.bpmn', 'utf-8');
 openDiagram(xmlDiagram);
-//setTimeout(showAlertatStartUp, 500);
+setTimeout(showAlertatStartUp, 500);
 //Show alert at the beginning
 function showAlertatStartUp(){
-    var r = alert("Please go ahead with analyzing the model with the animation now.\n\n The animation will start immediately. Select a start event to continue.\nYou can analyze as long as you like. The animation will restart when the end event is reached.");
-    $('[animStep-button-click]').prop('disabled', true);
-    $('[animSel-button-click]').prop('disabled', true);
+    var r = alert("Here, you can try the process model viewer and process model animation. \n\n\nYou can start the model viewer and animation tutorials using the buttons down the page.");
+    //Please scroll to zoom in/out and click and hold the process to move around.");
+    //$('[animStep-button-click]').prop('disabled', true);
+    //$('[animSel-button-click]').prop('disabled', true);
+    $('[data-open-file]').prop('disabled', true);
+    $('[dropdown-button-click]').prop('disabled', true);
     var timeStamp = Math.floor(Date.now() / 1000); 
     //Butona basildigi zaman ile ayni is yapiliyor. 
-    initiateAnimation();
-}
-
-function populateRoleDropdown(){
-    $('[roleList-dropdown-click]').empty();
-    var isRoleDropdownFilled = false;
-    if(lanes.length > 0){
-        for (i=0; i<lanes.length; i++){ 
-           if(lanes[i].laneName.indexOf('undefined') == -1){//if the name is undefined, add it to the list. If everything is undefined, we need to disable the checkbox
-               $('<option/>').val(lanes[i].laneName).html(lanes[i].laneName).appendTo('[roleList-dropdown-click]');
-               isRoleDropdownFilled = true;
-           }
-        }
-    }
-    if(lanes.length == 0 || isRoleDropdownFilled == false){
-        $('[roleFilter-click]').prop('disabled', true);
-    }
+    //initiateAnimation();
 }
 
 //Open diagram from link on click-------------------
@@ -342,7 +304,6 @@ $file.on('change', function() {
     //xhrForm.open("POST", "http://localhost/map/db_addBatch.php");
     xhrForm.send(fd); */
     //end of add xml to server
-    xmlDiagram = xml;
     openDiagram(xml);
   });
 });
@@ -385,7 +346,7 @@ var aaa;
         //alert(aaa); //Will alert: 42
         $("#modellist").html(aaa);
         //document.getElementByID("modellist").innerHTML="afsdfsdf";
-        listDiv.value=aaa;
+        //listDiv.value=aaa;
     };
     oReq.open("get", "getFileList.php", true);
     //oReq.open("get", "getFileContent.php?id=2", true);
@@ -403,7 +364,6 @@ function showModelFromDB(id){
     oReq1.onload = function() {
         var bbb = this.responseText; 
         //alert(bbb);
-        console.log(bbb);
         openDiagram(bbb);
     };
     oReq1.open("get", "getFileContent.php?id="+id, true);
@@ -447,7 +407,7 @@ function doSetTimeoutEndAlert(loopCountC){
     //var myTimer = setTimeout(setMarker(highIdd, canvasA), loopCountC);//nextObjectin bas
     timeoutsArray[timeoutsArray.length] = setTimeout(function(){
         //color only the first sequence flow
-        alert('Please Restart to play the animation again.');
+        alert('The animation finished. You can restart the animation.');
     }, loopCountC);
 }
 function doSetTimeoutResetandInitiate(loopCountC){
@@ -458,10 +418,32 @@ function doSetTimeoutResetandInitiate(loopCountC){
     }, loopCountC);
 }
 
+//Recursive function to traverse all objects (through the end, then come back)
+//Not used now--------------------------------------
+//--------------------------------------------------
+/*var colorMe = function(objToColor){
+    //canvas.addMarker(objToColor.id, 'highlight');
+    loopF = 500*(loopCount+1);
+    doSetTimeoutObj(objToColor.id, loopF);
+    loopCount++;
+    if(objToColor.get('outgoing')[0] === undefined)
+        return;
+    
+    var seqFlow = objToColor.get('outgoing');
+    for(var i=0, count=seqFlow.length;i<count;i++)
+    {
+        doSetTimeoutFlow(seqFlow[i], loopF);
+        //setColorRec(seqFlow[i].targetRef, canvas, elementRegistry);
+        //var nextObject = seqFlow[i].targetRef;
+        colorMe(seqFlow[i].targetRef);
+        console.log("gelmeyecek buraya");
+    }
+};*/
+
 //Animate all alternative seq flows when full animation clicked----
 //-----------------------------------------------------------------
-var $buttonanimFull = $('[animFull-button-click]');
-$buttonanimFull.on('click', function(){
+var $button = $('[animFull-button-click]');
+$button.on('click', function(){
     //log('Anim started');
     timerCoef=1000;
     Tree = createFrgTree(viewer);
@@ -486,16 +468,15 @@ $buttonanimFull.on('click', function(){
 
 //Animate automatically but expect the user to select conditions----
 //------------------------------------------------------------------
-var $buttonanimSel = $('[animSel-button-click]');
-$buttonanimSel.on('click', function(){
-    isSelAnimSelected = true;
+var $button = $('[animSel-button-click]');
+$button.on('click', function(){
     initiateAnimation();
 });
 
 //Animate stepwise. The user needs to make a selection at every step----
 //----------------------------------------------------------------------
-var $buttonanimStep = $('[animStep-button-click]');
-$buttonanimStep.on('click', function(){
+var $button = $('[animStep-button-click]');
+$button.on('click', function(){
         //log('Anim started');
     //console.log(viewer.definitions); Banu: the whole process tree
     isStepAnimSelected = true;
@@ -504,208 +485,20 @@ $buttonanimStep.on('click', function(){
 
 //Reset the animation and restart with the original settings-------
 //-----------------------------------------------------------------
-var $buttonReset = $('[reset-button-click]');
-$buttonReset.on('click', function(){
+var $button = $('[reset-button-click]');
+$button.on('click', function(){
     //location.reload(); 
+    //numOfRepeats++
     resetandInitiateAnim();
-    //initiateAnimation();
 });
-
-//Start the animation tutorial-------
-//-----------------------------------------------------------------
-var $buttonanimTutor = $('[animTutorial-button-click]');
-$buttonanimTutor.on('click', function(){
-    window.open('tutorial-web.html','_parent',false);
-});
-
-//Open diagram from link on click-------------------
-//--------------------------------------------------
-var $diagramLink = $('[IssueMan-button-click]');
-$diagramLink.on('click', function(){
-    var x = new XMLHttpRequest();
-    x.open("GET", "../resources/IssueManagement.bpmn", true);
-    x.onreadystatechange = function () {
-    if (x.readyState == 4 && x.status == 200){
-        var doc = x.responseText;
-        //var root = doc.documentElement;
-        console.log(doc);
-        xmlDiagram = doc;
-        openDiagram(doc);
-        }
-    };
-    x.send(null);
-});
-
-//Open diagram from link on click-------------------
-//--------------------------------------------------
-var $diagramLink = $('[openMT5File-button-click]');
-$diagramLink.on('click', function(){
-    var x = new XMLHttpRequest();
-    x.open("GET", "../resources/MT5.bpmn", true);
-    x.onreadystatechange = function () {
-    if (x.readyState == 4 && x.status == 200){
-        var doc = x.responseText;
-        //var root = doc.documentElement;
-        console.log(doc);
-        xmlDiagram = doc;
-        openDiagram(doc);
-        }
-    };
-    x.send(null);
-});
-//Open diagram from link on click-------------------
-//--------------------------------------------------
-var $diagramLink = $('[simpleScan-button-click]');
-$diagramLink.on('click', function(){
-    var x = new XMLHttpRequest();
-    x.open("GET", "../resources/simplescan.bpmn", true);
-    x.onreadystatechange = function () {
-    if (x.readyState == 4 && x.status == 200){
-        var doc = x.responseText;
-        //var root = doc.documentElement;
-        console.log(doc);
-        xmlDiagram = doc;
-        openDiagram(doc);
-        }
-    };
-    x.send(null);
-});
-//Open diagram from link on click-------------------
-//--------------------------------------------------
-var $diagramLink = $('[defBlockStr-button-click]');
-$diagramLink.on('click', function(){
-    var x = new XMLHttpRequest();
-    x.open("GET", "../resources/Blockstructure-2LevelPlus.bpmn", true);
-    x.onreadystatechange = function () {
-    if (x.readyState == 4 && x.status == 200){
-        var doc = x.responseText;
-        //var root = doc.documentElement;
-        console.log(doc);
-        xmlDiagram = doc;
-        openDiagram(doc);
-        }
-    };
-    x.send(null);
-});
-//Open diagram from link on click-------------------
-//--------------------------------------------------
-var $diagramLink = $('[defAndStr-button-click]');
-$diagramLink.on('click', function(){
-    var x = new XMLHttpRequest();
-    x.open("GET", "../resources/Blockstructure-AND.bpmn", true);
-    x.onreadystatechange = function () {
-    if (x.readyState == 4 && x.status == 200){
-        var doc = x.responseText;
-        //var root = doc.documentElement;
-        console.log(doc);
-        xmlDiagram = doc;
-        openDiagram(doc);
-        }
-    };
-    x.send(null);
-});
-
-var $input = $('[pace-click]');
-$input.on('change', function(){
-    var newval=$(this).val();
-    //logExp("clickPrc1AnimButtonPace "+newval, particId);
-    logExp(particId+" clickPrc1AnimButtonPace "+newval, "WebLogger");
-    timerCoef = (-1)*newval;
-});
-
-var $filters = $('[showFilters-button-click]');
-$filters.on('click', function(){
-    populateRoleDropdown();
-    var newval=$filters.text();
-    if(newval.indexOf("Show Filters") != -1){
-        //if not clicked before and now clicked, show the filters
-        $filters.text("Hide Filters");
-        $('#filterNavbar').show();
-    }else{
-        $filters.text("Show Filters");
-        //document.getElementById("showFilters").textContent="Show Filters";
-        $('#filterNavbar').hide();
-    }
-});
-
-var $roleFilterCheck = $('[roleFilter-click]');
-$roleFilterCheck.on('click', function(){
-    populateRoleDropdown();
-    var newval = $roleFilterCheck.is(':checked');
-    if(newval == true){
-        $roleList.attr("disabled", false);
-        isRoleBasedAnimSelected = true;
-        $('[animStep-button-click]').prop('disabled', true);
-        //if enabled, the first role in the dropdown menu will be selected by default
-        var roleNameFilter=$('[roleList-dropdown-click]').val();
-        for(var i = 0; i < lanes.length; i++){
-            if(lanes[i].laneName == roleNameFilter){
-                roleIdtobeAnimated = lanes[i].laneId;
-            }else{
-                console.log('lane boyamaya geliyor mu');
-                viewer.get('canvas').addMarker(lanes[i].laneId, 'lime');
-            }
-        }
-        //also disable random click if this is enabled
-        $('[randomFlow-click]').prop('disabled', true);
-        isRandomFlowSelected = false;
-    }else{
-        $roleList.attr("disabled", true);
-        //enable the stepped anim button only if the animation is not running
-        if(isStepAnimSelected==false && isSelAnimSelected==false){
-            $('[animStep-button-click]').prop('disabled', false);
-        }
-        isRoleBasedAnimSelected = false;
-        //now we can also click random flow 
-        $('[randomFlow-click]').prop('disabled', false);
-    }
-});
-
-var $roleList = $('[roleList-dropdown-click]');
-$('#filteringDiv').on('change', $roleList, function(){
-    var roleNameFilter=$roleList.val();
-    for(var i = 0; i < lanes.length; i++){
-        if(lanes[i].laneName == roleNameFilter){
-            roleIdtobeAnimated = lanes[i].laneId;
-            return;
-        }
-    }
-});
-
-var $randomFlowCheck = $('[randomFlow-click]');
-$randomFlowCheck.on('click', function(){
-    var newval = $randomFlowCheck.is(':checked');
-    if(newval == true){
-        isRandomFlowSelected=true;
-        //disable role filter click and remove assignments
-        $('[roleFilter-click]').prop('disabled', true);
-        $('[roleList-dropdown-click]').prop('disabled', true);
-        isRoleBasedAnimSelected = false;
-        roleIdtobeAnimated;
-    }else{
-        isRandomFlowSelected=false;
-        //enable role filter click and return to previous settings
-        $('[roleFilter-click]').prop('disabled', false);
-        $('[roleList-dropdown-click]').prop('disabled', false);
-        $('[roleFilter-click]').attr('checked', false);
-    }
-});
-
-//------------------------------------------------
-
 
 function initiateAnimation(){
     //either when a button is clicked or user opens the page for the first time or returns back to start.
     $('[animStep-button-click]').prop('disabled', true);
     $('[animSel-button-click]').prop('disabled', true);
-    //disable also role selection filters
-    $('[roleFilter-click]').prop('disabled', true);
-    $('[roleList-dropdown-click]').prop('disabled', true);
-    $('[randomFlow-click]').prop('disabled', true);
-
     canvas = viewer.get('canvas');
     overlays = viewer.get('overlays');
-    //timerCoef = 800;
+    timerCoef = 800;
     //butun elemanlarin uzerinden dolasip And diverging gateway olanlari bulup source seqlari ata
     elementRegistry = viewer.get('elementRegistry');
     var allElements = elementRegistry.getAll();
@@ -718,7 +511,6 @@ function resetAll(){
     loopCount=0;
     //timerCoef=0;             //adjust the pace
     isStepAnimSelected=false;//if stepwise or cont animation selected
-    isSelAnimSelected=false;
     isJustFollowNext=false;  //if only the following node needs to be clicked in stepwise anim
     nodetobeClicked.length=0; //list of nodes that need to be clicked
 
@@ -731,91 +523,56 @@ function resetAll(){
     gatewayCombination.length=0;
     allObjects.length=0;
     startEvents.length=0;
-    lanes.length=0;
-    
-    isCurObjInSelectedLane=false;
     //reset all timeouts
     for(var i=0; i<timeoutsArray.length; i++){
         clearTimeout(timeoutsArray[i]);
     }
     timeoutsArray.length=0;
-    //openDiagram(xmlDiagram);
-    //if role based anim is not selected before, enable it
-    if(isRoleBasedAnimSelected == false){
-        $('[animStep-button-click]').prop('disabled', false);
-    }
+    openDiagram(xmlDiagram);
+    $('[animStep-button-click]').prop('disabled', false);
     $('[animSel-button-click]').prop('disabled', false);
-    //enable also role selection filters
-    $('[roleFilter-click]').prop('disabled', false);
-    if(isRoleBasedAnimSelected == true)
-        $('[roleList-dropdown-click]').prop('disabled', false);
-    if(isRoleBasedAnimSelected == false){
-        $('[roleList-dropdown-click]').prop('disabled', true);
-        $('[randomFlow-click]').prop('disabled', false);
-    }
     document.getElementById("paceclick").value = "-800";
-}
-
-function removeAllHighlights(){
-
-    var regElements = viewer.get('elementRegistry').getAll();
-    console.log(regElements[3].businessObject);
-    console.log(regElements[5].businessObject);
-    for(var i = 0; i < regElements.length; i++){
-        //console.log
-        if(regElements[i].businessObject.$type.indexOf('SequenceFlow') != -1){
-            var outgoingGfx = viewer.get('elementRegistry').getGraphics(regElements[i].businessObject.id); 
-            outgoingGfx.select('path').attr({stroke: 'black'});
-        }else{
-            viewer.get('canvas').removeMarker(regElements[i].businessObject.id, 'highlight');
-            viewer.get('canvas').removeMarker(regElements[i].businessObject.id, 'highlight-light');
-            viewer.get('canvas').removeMarker(regElements[i].businessObject.id, 'highlight-toselect');
-        }
-    }
 }
 
 function resetandInitiateAnim(){
     resetAll();
-    removeAllHighlights();
-    //openDiagram(xmlDiagram);
     //initiateAnimation();
 }
 
 var $input = $('[pace-click]');
 $input.on('change', function(){
     var newval=$(this).val();
-    //logExp("clickPrc1AnimButtonPace "+newval, particId);
-    logExp(particId+" clickPrc1AnimButtonPace "+newval, "WebLogger");
+    //logExp("clickTutButtonPace "+newval, particId);
+    logExp(particId+" clickTutButtonPace "+newval, "WebLogger");
     timerCoef = (-1)*newval;
 });
-
+//-------------------------
+var $input = $('[intro-tut-click]');
+$input.on('click', function(){
+    //var newval=$(this).val();
+    viewer.get('canvas').zoom('fit-viewport');
+    startIntroViewer();
+});
+var $input = $('[anim-tut-click]');
+$input.on('click', function(){
+    //var newval=$(this).val();
+    viewer.get('canvas').zoom('fit-viewport');
+    startIntroAnim();
+});
+//-------------------------
 
 //Finalize the animation and go to questions-------
 //-----------------------------------------------------------------
-var $buttonanimFinish = $('[animFinish-button-click]');
-$buttonanimFinish.on('click', function(){
-    //location.reload(); 
-    var response;
-    console.log('seconds ' +parseInt(inSeconds));
-    if(parseInt(inSeconds) > 0){
-        response = confirm("Your suggested time did not finish yet. We suggest you to work more on it.\n Click OK to finish and Cancel to continue.");
-    }else{
-        response = confirm("Are you sure you want to finish?\n Click OK to finish and Cancel to continue.");
-    }
-    if(response == true){
-        //logExp("finishPrc1Anim", particId);
-        var runType = particId.slice(-1);
-        window.open('process1_survey.html?ID='+particId,'_parent',false);
-    }else{
-        //numOfRepeats++;
-    }
+var $button = $('[animFinish-button-click]');
+$button.on('click', function(){
+    window.open('prime.html','_parent',false);
 });
 
 //Parse all converging parallel gateways at the beginning of the animation----
 //----------------------------------------------------------------------------
 function setConvergingParallelGatewayArray(allElements){
     for(var i=0; i<allElements.length; i++){
-        if((allElements[i].businessObject.$type.indexOf('ParallelGateway') != -1  || allElements[i].businessObject.$type.indexOf('InclusiveGateway') != -1) && allElements[i].businessObject.gatewayDirection.indexOf('Converging') != -1){
+        if(allElements[i].businessObject.$type.indexOf('ParallelGateway') != -1 && allElements[i].businessObject.gatewayDirection.indexOf('Converging') != -1){
             //buldugumuz converging paralel icin arrayimize butun incominglerini atiyacagiz
             for(var k=0; k<allElements[i].businessObject.get('incoming').length;k++){
                 //daha onceki degerlerden aynisi var mi kontrol edelim. ancak yoksa ekleyeylim. 
@@ -890,138 +647,66 @@ function findNextObject(seqFlowToParse){
     if(nextObjectType.indexOf('EndEvent') != -1){
         loopCount+=2;
         markObject(nextObject.id, 'highlight');
-        loopCount+=10;
         numOfRepeats++;
-        //logExp("endEventPrc1Anim "+numOfRepeats, particId);
-        logExp(particId+" endEventPrc1Anim "+numOfRepeats, "WebLogger");
+        loopCount+=5;
         //Alert user that the animation will start again.
         doSetTimeoutEndAlert(timerCoef*(loopCount+1));
         loopCount+=1;
         //resetAll();
         var tempLoopCount = loopCount;
-        doSetTimeoutResetandInitiate(timerCoef*(tempLoopCount));
+        //tutorialda sona gelince bitirecegiz. yeniden baslama yok. 
+        //doSetTimeoutResetandInitiate(500*(tempLoopCount+1));
         //Butona basildigi zaman ile ayni is yapiliyor. 
         loopCount = tempLoopCount;
     }
-    else if(nextObjectType.indexOf('Task') != -1 || nextObjectType.indexOf('Event') != -1
-           || nextObjectType.indexOf('SubProcess') != -1){
+    else if(nextObjectType.indexOf('Task') != -1 || nextObjectType.indexOf('Event') != -1){
         var seqFlow = nextObject.get('outgoing');
-        //identify if role based selected, in current lane
-        isCurObjInSelectedLane = false;
-        if(lanes.length >0){
-            var curLaneId = nextObject.lanes[0].id;
-        }
-        if(isRoleBasedAnimSelected == true && roleIdtobeAnimated.indexOf(curLaneId) != -1){
-            isCurObjInSelectedLane = true;
-        }
-        
         if(isStepAnimSelected == true){
             markCleanObject(nextObject.id, 'highlight');
-            markCleanObject(nextObject.id, 'highlight-light');
             loopCount++;
             markObject(nextObject.id, 'highlight-light');
-            loopCount++;
             isJustFollowNext=true;
             nodetobeClicked.push(nextObject.id);
             return;
         }
-        console.log('role secildi mi? ' + isRoleBasedAnimSelected);
-        //check if role filtering is active
-        if(isRoleBasedAnimSelected == false || (isRoleBasedAnimSelected == true && isCurObjInSelectedLane == true)){
-            markCleanObject(nextObject.id, 'highlight');
-            markObjectAndSeqFlow(nextObject.id, 'highlight', 'lime');
-            loopCount++;
-            isCurObjInSelectedLane = false;
-            findNextObject(seqFlow[0]);
-        }else{//if role based anim selected but the object is not in the selected lane
-            //markCleanObject(nextObject.id, 'highlight');
-            //markObjectAndSeqFlow(nextObject.id, 'highlight', 'lime');
-            //loopCount++;
-            findNextObject(seqFlow[0]);
-        }
+        markCleanObject(nextObject.id, 'highlight');
+        markObjectAndSeqFlow(nextObject.id, 'highlight', 'lime');
+        loopCount++;
+        findNextObject(seqFlow[0]);
     }else if((nextObjectType.indexOf('ExclusiveGateway') !=-1) 
              && nextObject.gatewayDirection == "Diverging"){
+        markCleanObject(nextObject.id, 'highlight');
+        loopCount++;
+        markObject(nextObject.id, 'highlight');
         var seqFlow = nextObject.get('outgoing');
         var pathNum = seqFlow.length;
-        //check if role based anim is selected and if the object is in the selected lane
-        isCurObjInSelectedLane = false;
-        if(lanes.length >0){
-            var curLaneId = nextObject.lanes[0].id;
-        }
-        if(isRoleBasedAnimSelected == true && roleIdtobeAnimated.indexOf(curLaneId) != -1){
-            isCurObjInSelectedLane = true;
-        }
-        
-        if(isRoleBasedAnimSelected == false || isCurObjInSelectedLane == true){
-            markCleanObject(nextObject.id, 'highlight');
-            loopCount++;
-            markObject(nextObject.id, 'highlight');
-        }
         for(var i=0; i<pathNum;i++){
             seqFlowstobeClicked.push({
                 relatedXOR: nextObject.id, 
                 seqFlowId: seqFlow[i].id});
-            if(isRandomFlowSelected == false && ((isRoleBasedAnimSelected == false) || (isRoleBasedAnimSelected == true && isCurObjInSelectedLane == true))){
-                loopCount++;
-                markSeqFlowwithGivenId(seqFlow[i].id, 'Magenta');
-            }
+            markSeqFlowwithGivenId(seqFlow[i].id, 'Magenta');
         }
         console.log('hangilere tiklamak lazim: ');
         console.log(seqFlowstobeClicked);
-        
-        if(isRandomFlowSelected == true || (isRoleBasedAnimSelected == true && isCurObjInSelectedLane == false)){//if obj in another lane, assign selection randomly
-            var randomSelectedPath = Math.floor((Math.random() * pathNum)+1)-1;
-            console.log("rasgele sayimiz. maks: " + pathNum + " gerceklesen " +randomSelectedPath);
-            //findNextObject(seqFlow[(randomSelectedPath)]);
-            //TODO: Check this following conditions. Can be wrong.
-            if(isRandomFlowSelected == true || (isRoleBasedAnimSelected == false || (isRoleBasedAnimSelected == true && isCurObjInSelectedLane == true))){
-                markSeqFlowwithGivenId(seqFlow[randomSelectedPath].id, 'Magenta');
-                loopCount++;
-                markSeqFlowwithGivenId(seqFlow[randomSelectedPath].id, 'lime');
-            }
-            var shape1 = elementRegistry.get(seqFlow[randomSelectedPath].id);
-            eventBus.fire('element.click', { element: shape1 });
-        }
         return;
+    }else if((nextObjectType.indexOf('ExclusiveGateway') !=-1) 
+             && nextObject.gatewayDirection == "Converging"){
         
-    }else if((nextObjectType.indexOf('ExclusiveGateway') !=-1) && nextObject.gatewayDirection == "Converging"){
-        //check if role based anim is selected and if the object is in the selected lane
-        isCurObjInSelectedLane = false;
-        if(lanes.length >0){
-            var curLaneId = nextObject.lanes[0].id;
-        }
-        if(isRoleBasedAnimSelected == true && roleIdtobeAnimated.indexOf(curLaneId) != -1){
-            isCurObjInSelectedLane = true;
-        }
-        //We remove the following part so that in stepAnim, it automatically flows through converging XOR. There is no need for the user to select the gateway. If we prefer it to be clicked by the user as well, we need to enable this. 
-        /*if(isStepAnimSelected == true){
+        if(isStepAnimSelected == true){
             markCleanObject(nextObject.id, 'highlight');
             loopCount++;
             markObject(nextObject.id, 'highlight-light');
             isJustFollowNext=true;
             nodetobeClicked.push(nextObject.id);
             return;
-        }*/
-        
-        if(isRoleBasedAnimSelected == false || isCurObjInSelectedLane == true){
-            markCleanObject(nextObject.id, 'highlight');
-            markObjectAndSeqFlow(nextObject.id, 'highlight', 'lime');
-            isCurObjInSelectedLane = false;
         }
+        markCleanObject(nextObject.id, 'highlight');
+        markObjectAndSeqFlow(nextObject.id, 'highlight', 'lime');
         var seqFlow = nextObject.get('outgoing');
         findNextObject(seqFlow[0]);
     }
-    else if((nextObjectType.indexOf('ParallelGateway') !=-1  || nextObjectType.indexOf('InclusiveGateway') !=-1) 
+    else if((nextObjectType.indexOf('ParallelGateway') !=-1) 
              && nextObject.gatewayDirection == "Converging"){
-        //check if role based anim is selected and if the object is in the selected lane
-        isCurObjInSelectedLane = false;
-        if(lanes.length >0){
-            var curLaneId = nextObject.lanes[0].id;
-        }
-        if(isRoleBasedAnimSelected == true && roleIdtobeAnimated.indexOf(curLaneId) != -1){
-            isCurObjInSelectedLane = true;
-        }
-        
         //Bu convergingde devam etmeden once tum kollardan akislarin geldiginden emin olmaliyiz
         for(var i=0; i<andGatewaysMerged.length;i++){
             //seq flow to parse'i bulup isaretleyelim
@@ -1042,45 +727,28 @@ function findNextObject(seqFlowToParse){
         }
         if(didAllIncomingPathsPassed == true){
             //console.log('tum kollari isaretledigimiz noktaya geldik');
-            //We remove the following part so that in stepAnim, it automatically flows through converging AND. There is no need for the user to select the gateway. If we prefer it to be clicked by the user as well, we need to enable this. 
-            /*if(isStepAnimSelected == true){
+            if(isStepAnimSelected == true){
                 markCleanObject(nextObject.id, 'highlight');
                 loopCount++;
                 markObject(nextObject.id, 'highlight-light');
                 isJustFollowNext=true;
                 nodetobeClicked.push(nextObject.id);
                 return;
-            }*/
-            if(isRoleBasedAnimSelected == false || isCurObjInSelectedLane == true){
-                markCleanObject(nextObject.id, 'highlight');
-                markCleanObject(nextObject.id, 'highlight-light');
-                loopCount++;
-                markObject(nextObject.id, 'highlight');
             }
+            markCleanObject(nextObject.id, 'highlight');
+            loopCount++;
+            markObject(nextObject.id, 'highlight');
             var seqFlow = nextObject.get('outgoing');
             var pathNum = seqFlow.length;
             for(var i=0; i<pathNum;i++){
-                if(isRoleBasedAnimSelected == false || isCurObjInSelectedLane == true){
-                    loopCount++;
-                    markSeqFlowwithGivenId(seqFlow[i].id, 'lime');
-                }
+                loopCount++;
+                markSeqFlowwithGivenId(seqFlow[i].id, 'lime');
                 findNextObject(seqFlow[i]);
             }
         }
-        isCurObjInSelectedLane = false;
     }
-    else if((nextObjectType.indexOf('ParallelGateway') !=-1 || nextObjectType.indexOf('InclusiveGateway') !=-1)
+    else if((nextObjectType.indexOf('ParallelGateway') !=-1)
             && nextObject.gatewayDirection == "Diverging"){
-        
-        //check if role based anim is selected and if the object is in the selected lane
-        isCurObjInSelectedLane = false;
-        if(lanes.length >0){
-            var curLaneId = nextObject.lanes[0].id;
-        }
-        if(isRoleBasedAnimSelected == true && roleIdtobeAnimated.indexOf(curLaneId) != -1){
-            isCurObjInSelectedLane = true;
-        }
-        
         //Paralel kola devam etmeden once bu fragmentin isaretleme bilgisini sifirlamamiz gerekiyor
         //Normal akista bu gerekmiyor ama kullanici XOR secip geriye donduyse tekrar boyama icin
         //Bu bilgileri resetlememiz gerekiyor
@@ -1092,23 +760,19 @@ function findNextObject(seqFlowToParse){
                 andGatewaysMerged[m].didFlowMerge = false;
             }
         }
-        if(isRoleBasedAnimSelected == false || isCurObjInSelectedLane == true){
-            markCleanObject(nextObject.id, 'highlight');
-            loopCount++;
-            markObject(nextObject.id, 'highlight');
-        }
+        markCleanObject(nextObject.id, 'highlight');
+        loopCount++;
+        markObject(nextObject.id, 'highlight');
         var seqFlow = nextObject.get('outgoing');
         var pathNum = seqFlow.length;
-        if(isRoleBasedAnimSelected == false || isCurObjInSelectedLane == true){
-            for(var i=0; i<pathNum;i++){
-                markSeqFlowwithGivenId(seqFlow[i].id, 'Lime');
-                //paralel kollari hemen ayni anda boyamak istiyoruz ki paralel mantigi anlayalim.
-                //next object bularak sonrasindaki loopta devam edicez. 
-                //Ilk objeleri de hemen boyamak istersen bunu ac
-                //markObject(seqFlow[i].targetRef.id, 'highlight');
-            }
+        
+        for(var i=0; i<pathNum;i++){
+            markSeqFlowwithGivenId(seqFlow[i].id, 'Lime');
+            //paralel kollari hemen ayni anda boyamak istiyoruz ki paralel mantigi anlayalim.
+            //next object bularak sonrasindaki loopta devam edicez. 
+            //Ilk objeleri de hemen boyamak istersen bunu ac
+            //markObject(seqFlow[i].targetRef.id, 'highlight');
         }
-        isCurObjInSelectedLane = false;
         for(var k=0; k<pathNum;k++){
             findNextObject(seqFlow[k]);
         }
@@ -1320,7 +984,7 @@ function findGatewayCouples(seqFlowToParse){
     if(nextObjectType.indexOf('endEvent') != -1){
         return;
     }
-    if((nextObjectType.indexOf('ParallelGateway') !=-1  || nextObjectType.indexOf('InclusiveGateway') !=-1)
+    if((nextObjectType.indexOf('ParallelGateway') !=-1)
             && (nextObject.gatewayDirection == "Diverging")){
         console.log('geldik mi diverginge');
         console.log(nextObject);
@@ -1333,7 +997,7 @@ function findGatewayCouples(seqFlowToParse){
             findGatewayCouples(seqFlow[j]);
         }
         
-    }else if((nextObjectType.indexOf('ParallelGateway') !=-1  || nextObjectType.indexOf('InclusiveGateway') !=-1)
+    }else if((nextObjectType.indexOf('ParallelGateway') !=-1)
             && (nextObject.gatewayDirection == "Converging")){
         //gatewayi sondan donup en son convergenti bos olana ata
         for(var i = gatewayCombination.length - 1; i >= 0; i--){
